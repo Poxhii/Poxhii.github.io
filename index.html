@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>TV Start</title>
+<style>
+  :root {
+    --bg: #000;
+    --surface: #141414;
+    --surface-2: #1e1e1e;
+    --text: #f2f2f2;
+    --muted: #8a8a8a;
+    --focus: #3ea6ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); overflow: hidden; }
+  body {
+    font-family: "SamsungOne", "Samsung Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    display: flex; flex-direction: column;
+    padding: 4vh 5vw;
+    transition: transform 2s ease;
+    cursor: default;
+  }
+
+  /* ---------- Kopfbereich ---------- */
+  header { display: flex; align-items: flex-end; justify-content: space-between; gap: 4vw; }
+  .clock { line-height: 1; }
+  #time {
+    font-size: 11vh; font-weight: 200; letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  #date { font-size: 3.2vh; color: var(--muted); margin-top: 1.4vh; font-weight: 400; }
+
+  .news {
+    flex: 1; max-width: 52vw; text-align: right;
+    color: var(--muted); font-size: 2.6vh; line-height: 1.35;
+    padding-bottom: 0.4vh;
+  }
+  .news-label {
+    display: inline-block; font-size: 1.7vh; letter-spacing: 0.18em; text-transform: uppercase;
+    color: #5a5a5a; margin-bottom: 0.8vh;
+  }
+  #headline { color: #c8c8c8; transition: opacity 0.6s ease; min-height: 3.6vh; }
+  #topline { font-size: 2vh; color: #6a6a6a; display: block; }
+  #headline.fade { opacity: 0; }
+
+  /* ---------- Kachelraster ---------- */
+  main { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 4.5vh; }
+  .grid {
+    width: 100%;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 3vw;
+  }
+  .inputs {
+    width: 100%;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 3vw;
+  }
+  .tile.input { flex-direction: row; height: 13vh; gap: 2.4vw; color: var(--muted); }
+  .tile.input .port { height: 4.6vh; width: auto; }
+  .tile.input .name { margin-top: 0; font-size: 3.2vh; }
+  .tile.input:focus, .tile.input:hover { color: var(--text); transform: scale(1.04); }
+
+  .hint {
+    position: fixed; left: 50%; bottom: 7vh; transform: translateX(-50%);
+    max-width: 80vw; padding: 2vh 3vw; border-radius: 1.6vh;
+    background: #1e1e1e; border: 0.3vh solid #333; color: var(--text);
+    font-size: 2.6vh; text-align: center; line-height: 1.4;
+    opacity: 0; transition: opacity 0.3s ease; pointer-events: none;
+  }
+  .hint.show { opacity: 1; }
+  .tile {
+    position: relative;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 30vh; border-radius: 2.2vh;
+    background: var(--surface);
+    color: var(--text); text-decoration: none;
+    outline: none;
+    border: 0.6vh solid transparent;
+    transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    will-change: transform;
+  }
+  .tile .logo { height: 11vh; display: flex; align-items: center; justify-content: center; }
+  .tile .logo svg { height: 100%; width: auto; display: block; }
+  .tile .name { margin-top: 3vh; font-size: 2.8vh; color: var(--muted); transition: color 0.15s ease; }
+  .tile .key {
+    position: absolute; top: 1.6vh; left: 2vh; font-size: 1.8vh; color: #444;
+  }
+
+  .tile:focus, .tile:hover {
+    background: var(--surface-2);
+    border-color: var(--focus);
+    box-shadow: 0 0 0 0.5vh rgba(62,166,255,0.25), 0 2vh 5vh rgba(0,0,0,0.9);
+    transform: scale(1.06);
+  }
+  .tile:focus .name, .tile:hover .name { color: var(--text); }
+
+  footer { text-align: center; font-size: 1.8vh; color: #3c3c3c; }
+
+  @media (max-aspect-ratio: 1/1) {
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    .tile { height: 20vh; }
+    .tile.input { height: 9vh; }
+    header { flex-direction: column; align-items: flex-start; }
+    .news { text-align: left; max-width: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="clock">
+    <div id="time">--:--</div>
+    <div id="date">&nbsp;</div>
+  </div>
+  <div class="news" aria-live="polite">
+    <span class="news-label">Schlagzeilen</span>
+    <div id="headline"><span id="topline"></span><span id="title">Lade …</span></div>
+  </div>
+</header>
+
+<main>
+  <nav class="grid" id="grid">
+    <a class="tile" href="https://www.netflix.com" tabindex="0">
+      <span class="key">1</span>
+      <span class="logo">
+        <svg viewBox="0 0 60 100" aria-hidden="true">
+          <path fill="#B1060F" d="M0 0h17v100l-17-2z"/>
+          <path fill="#B1060F" d="M43 0h17v98l-17 2z"/>
+          <path fill="#E50914" d="M0 0h17l43 98-17 2z"/>
+        </svg>
+      </span>
+      <span class="name">Netflix</span>
+    </a>
+
+    <a class="tile" href="https://www.youtube.com/tv" tabindex="0">
+      <span class="key">2</span>
+      <span class="logo">
+        <svg viewBox="0 0 140 100" aria-hidden="true">
+          <rect x="0" y="5" width="140" height="90" rx="26" fill="#FF0000"/>
+          <path fill="#fff" d="M56 28v44l38-22z"/>
+        </svg>
+      </span>
+      <span class="name">YouTube TV</span>
+    </a>
+
+    <a class="tile" href="https://www.primevideo.com" tabindex="0">
+      <span class="key">3</span>
+      <span class="logo">
+        <svg viewBox="0 0 220 100" aria-hidden="true">
+          <text x="110" y="52" text-anchor="middle" fill="#fff"
+                font-family="Arial, Helvetica, sans-serif" font-size="52" font-weight="700">prime</text>
+          <path d="M40 68q70 30 140 0" fill="none" stroke="#1A98FF" stroke-width="7" stroke-linecap="round"/>
+          <path d="M168 60l14 7-10 12" fill="none" stroke="#1A98FF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <span class="name">Prime Video</span>
+    </a>
+
+    <a class="tile" href="https://open.spotify.com" tabindex="0">
+      <span class="key">4</span>
+      <span class="logo">
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="50" cy="50" r="48" fill="#1DB954"/>
+          <path d="M24 37q30-9 54 5" fill="none" stroke="#000" stroke-width="8" stroke-linecap="round"/>
+          <path d="M27 52q25-7 46 4" fill="none" stroke="#000" stroke-width="6.5" stroke-linecap="round"/>
+          <path d="M30 66q20-5 37 3" fill="none" stroke="#000" stroke-width="5" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span class="name">Spotify</span>
+    </a>
+  </nav>
+
+  <nav class="inputs" id="inputs">
+    <a class="tile input" href="#" data-hdmi="1" tabindex="0">
+      <span class="key">5</span>
+      <svg class="port" viewBox="0 0 64 32" aria-hidden="true"><path d="M3 4h58v14l-8 10H11L3 18z" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"/><path d="M14 12h36" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+      <span class="name">HDMI 1</span>
+    </a>
+    <a class="tile input" href="#" data-hdmi="2" tabindex="0">
+      <span class="key">6</span>
+      <svg class="port" viewBox="0 0 64 32" aria-hidden="true"><path d="M3 4h58v14l-8 10H11L3 18z" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"/><path d="M14 12h36" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+      <span class="name">HDMI 2</span>
+    </a>
+    <a class="tile input" href="#" data-hdmi="3" tabindex="0">
+      <span class="key">7</span>
+      <svg class="port" viewBox="0 0 64 32" aria-hidden="true"><path d="M3 4h58v14l-8 10H11L3 18z" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"/><path d="M14 12h36" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+      <span class="name">HDMI 3</span>
+    </a>
+  </nav>
+</main>
+
+<div id="hint" class="hint" role="status"></div>
+
+<footer>Pfeiltasten wählen · OK öffnet · Zifferntasten 1–7 springen direkt</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- Uhr ---------- */
+  var DAYS = ["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
+  var MONTHS = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+  var timeEl = document.getElementById("time");
+  var dateEl = document.getElementById("date");
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+  function tick() {
+    var d = new Date();
+    timeEl.textContent = pad(d.getHours()) + ":" + pad(d.getMinutes());
+    dateEl.textContent = DAYS[d.getDay()] + ", " + d.getDate() + ". " + MONTHS[d.getMonth()] + " " + d.getFullYear();
+    // exakt zum nächsten Minutenwechsel neu rendern (spart CPU gegenüber Sekundentakt)
+    setTimeout(tick, 60000 - d.getSeconds() * 1000 - d.getMilliseconds() + 20);
+  }
+  tick();
+
+  /* ---------- Fernbedienungs-Navigation ---------- */
+  var tiles = Array.prototype.slice.call(document.querySelectorAll(".tile"));
+  function current() { var i = tiles.indexOf(document.activeElement); return i < 0 ? 0 : i; }
+
+  // Räumliche Navigation: nächste Kachel in Pfeilrichtung anhand der Bildschirmposition
+  function center(el) {
+    var r = el.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }
+  function neighbour(i, dx, dy) {
+    var from = center(tiles[i]), best = -1, bestScore = Infinity;
+    for (var j = 0; j < tiles.length; j++) {
+      if (j === i) continue;
+      var to = center(tiles[j]);
+      var ax = to.x - from.x, ay = to.y - from.y;
+      var main = dx ? ax * dx : ay * dy;           // Abstand in Pfeilrichtung
+      var side = dx ? Math.abs(ay) : Math.abs(ax); // seitliche Abweichung
+      if (main <= 5) continue;
+      if (dx && side > 20) continue;               // links/rechts nur innerhalb derselben Reihe
+      var score = main + side * 2;
+      if (score < bestScore) { bestScore = score; best = j; }
+    }
+    return best;
+  }
+  function focusTile(i) {
+    if (i < 0 || i >= tiles.length) return;
+    tiles[i].focus();
+    try { localStorage.setItem("tvdash-focus", String(i)); } catch (e) {}
+  }
+
+  document.addEventListener("keydown", function (e) {
+    var k = e.keyCode, i = current();
+    if (tiles.indexOf(document.activeElement) < 0 && k >= 37 && k <= 40) {
+      focusTile(i); e.preventDefault(); return;
+    }
+    switch (k) {
+      case 37: focusTile(neighbour(i, -1, 0)); break;  // links
+      case 39: focusTile(neighbour(i, 1, 0)); break;   // rechts
+      case 38: focusTile(neighbour(i, 0, -1)); break;  // hoch
+      case 40: focusTile(neighbour(i, 0, 1)); break;   // runter
+      case 13: tiles[i].click(); break;                // OK / Enter
+      default:
+        if (k >= 49 && k <= 48 + tiles.length) { focusTile(k - 49); tiles[k - 49].click(); }  // 1–7
+        return;
+    }
+    e.preventDefault();
+  });
+
+  /* ---------- HDMI-Eingänge ---------- */
+  // Eine normale Webseite darf den TV-Eingang nicht umschalten. Nur wenn die Seite als
+  // Tizen-Web-App installiert ist (Privileg tv.window), wird die TV-Window-API genutzt.
+  // Im Browser erscheint stattdessen ein kurzer Hinweis.
+  var hintEl = document.getElementById("hint"), hintTimer = null;
+  function hint(msg) {
+    hintEl.textContent = msg;
+    hintEl.className = "hint show";
+    clearTimeout(hintTimer);
+    hintTimer = setTimeout(function () { hintEl.className = "hint"; }, 5000);
+  }
+  function switchHdmi(n) {
+    var fallback = "HDMI " + n + ": Bitte die Taste „Source“ / „Quelle“ auf der Fernbedienung drücken und HDMI " + n + " wählen.";
+    if (!(window.tizen && tizen.tvwindow)) { hint(fallback); return; }
+    try {
+      tizen.tvwindow.setSource({ type: "HDMI", number: n }, function () {
+        tizen.tvwindow.show(function () {}, function () { hint(fallback); }, ["0px", "0px", "100%", "100%"], "MAIN");
+      }, function () { hint(fallback); }, "MAIN");
+    } catch (err) { hint(fallback); }
+  }
+  tiles.forEach(function (t) {
+    var n = t.getAttribute("data-hdmi");
+    if (n) t.addEventListener("click", function (e) { e.preventDefault(); switchHdmi(parseInt(n, 10)); });
+  });
+
+  tiles.forEach(function (t, i) {
+    t.addEventListener("mouseenter", function () { focusTile(i); });
+  });
+
+  var start = 0;
+  try { start = parseInt(localStorage.getItem("tvdash-focus"), 10) || 0; } catch (e) {}
+  focusTile(start < tiles.length ? start : 0);
+
+  /* ---------- Schlagzeilen (Tagesschau, kein Tracking, keine Cookies) ---------- */
+  var NEWS_URL = "https://www.tagesschau.de/api2u/homepage";
+  var headlineEl = document.getElementById("headline");
+  var titleEl = document.getElementById("title");
+  var toplineEl = document.getElementById("topline");
+  var items = [], pos = 0, rotTimer = null;
+
+  function show(n) {
+    headlineEl.className = "fade";
+    setTimeout(function () {
+      toplineEl.textContent = n.topline || "";
+      titleEl.textContent = n.title;
+      headlineEl.className = "";
+    }, 600);
+  }
+  function rotate() {
+    if (!items.length) return;
+    show(items[pos]);
+    pos = (pos + 1) % items.length;
+  }
+  function loadNews() {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", NEWS_URL, true);
+    xhr.timeout = 10000;
+    xhr.onload = function () {
+      try {
+        var data = JSON.parse(xhr.responseText);
+        var list = (data.news || []).filter(function (n) { return n && n.title; }).slice(0, 12);
+        if (list.length) {
+          items = list.map(function (n) { return { title: n.title, topline: n.topline }; });
+          pos = 0;
+          rotate();
+          if (!rotTimer) rotTimer = setInterval(rotate, 9000);
+        }
+      } catch (e) { fail(); }
+    };
+    xhr.onerror = xhr.ontimeout = fail;
+    xhr.send();
+  }
+  function fail() {
+    if (!items.length) { toplineEl.textContent = ""; titleEl.textContent = "Keine Schlagzeilen verfügbar"; }
+  }
+  loadNews();
+  setInterval(loadNews, 15 * 60 * 1000);
+
+  /* ---------- OLED-Schutz: alle 3 Minuten minimal verschieben ---------- */
+  var shifts = [[0,0],[3,2],[-2,3],[2,-3],[-3,-2]], s = 0;
+  setInterval(function () {
+    s = (s + 1) % shifts.length;
+    document.body.style.transform = "translate(" + shifts[s][0] + "px," + shifts[s][1] + "px)";
+  }, 180000);
+})();
+</script>
+</body>
+</html>
